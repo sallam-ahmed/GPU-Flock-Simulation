@@ -13,7 +13,7 @@ Tweak the parameters of ***BasicFlockController*** to control the general behavi
 
 **Unity Version:**
 
-- 2018.3.6.9f1
+- 2018.3.9f1
 
 **Inspired by:**
 
