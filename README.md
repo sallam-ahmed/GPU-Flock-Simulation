@@ -15,6 +15,14 @@ Tweak the parameters of ***BasicFlockController*** to control the general behavi
 
 - 2018.3.9f1
 
+**ToDo Features:**
+
+- [ ] Add Predation Behaviour (_Some boids will act as a predator, seek to hunt other boids_)
+- [ ] Add Flee Behaviour (_Boids will rund away from predators_)
+- [ ] Add Collision Avoidance (_Boids will avoid collisions around the scene, __will probably be baked static colliders___)
+- [ ] Add different ranges for each behaviour.
+- [ ] Add Boid Specific Skinned Animation.
+
 **Inspired by:**
 
 * [Shinao](https://github.com/Shinao).
