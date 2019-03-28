@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1175780720}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
+  m_IndirectSpecularColor: {r: 0.58774287, g: 0.68632114, b: 0.73796767, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -88,7 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ShowResolutionOverlay: 1
-  m_LightingDataAsset: {fileID: 112000000, guid: 003d9217ba7cb194ca3c8a878297b08d,
+  m_LightingDataAsset: {fileID: 112000000, guid: 4e4a466b3b781324bab3d04351f0f56c,
     type: 2}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -130,7 +130,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!154 &297974457
 TerrainCollider:
   m_ObjectHideFlags: 0
@@ -262,8 +262,12 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 25e1f2eddde2dad42a39bae1ffe630c2, type: 2}
   Target: {fileID: 1820300347}
   RotationSpeed: 0.7
-  BoidSpeed: 5
+  BoidSpeed: 14
   NeighbourDistance: 5
+  FleeRadius: 0
+  AlignmentRadius: 6
+  CohesionRadius: 6
+  SeparationRadius: 4
   AlignScale: 1
   CohesionScale: 1
   SeparationScale: 1
@@ -448,7 +452,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!108 &1820300346
 Light:
   m_ObjectHideFlags: 0

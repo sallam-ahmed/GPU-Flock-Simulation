@@ -6,75 +6,92 @@
 
 struct Boid
 {
-    float3 Position;
-    float3 Direction;
-    float2 Padding;
+	float3 Position;
+	float3 Direction;
+	float2 Padding;
 };
 
 RWStructuredBuffer<Boid> boidBuffer;
 
 CBUFFER_START(Params)
-    float DeltaTime;
-    float RotationSpeed;
-    float BoidSpeed;
-    float3 FlockingTargetPosition;
-    float NeighbourhoodRadius;
-    int BoidsCount;
-    //Just to control values
-    int AlignScale;
-    int CohesionScale;
-    int SeparationScale;
+float DeltaTime;
+float RotationSpeed;
+float BoidSpeed;
+float3 FlockingTargetPosition;
+float NeighbourhoodRadius;
+int BoidsCount;
+//Just to control values
+int AlignScale;
+int CohesionScale;
+int SeparationScale;
+//Better Control for Boids flow, let's specify different radius values for each rule
+float FleeRadius;
+float AlignmentRadius;
+float CohesionRadius;
+float SeparationRadius;
 CBUFFER_END
 
-[numthreads(GROUP_SIZE_X,GROUP_SIZE_Y,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    Boid boid = boidBuffer[id.x];
-    float speed = BoidSpeed;
+	Boid boid = boidBuffer[id.x];
+	float speed = BoidSpeed;
+	float3 separation = float3(0, 0, 0);
+	float3 alignment = float3(0, 0, 0);
+	float3 cohesion = FlockingTargetPosition; // Always go to the glowing light!
+	
+	uint nearbyCount = 1;
+	
+	bool affect = false;
+	
+	for (int i = 0; i < BoidsCount; i++)
+	{
+		if (i != (int)id.x)
+		{
+			Boid otherBoid = boidBuffer[i];
+			float dist = distance(boid.Position, otherBoid.Position);
+			if (dist <= SeparationRadius)
+			{
+				float3 diff = boid.Position - otherBoid.Position;
+				float diffLength = length(diff);
+				float scaler = clamp(1.0 - diffLength / SeparationRadius, 0.0, 1.0);
+				separation += diff * (scaler / diffLength);
+				affect = true;
+			}
+			if (dist <= CohesionRadius)
+			{
+				cohesion += otherBoid.Position;
+				affect = true;
+			}
+			if (dist <= AlignmentRadius)
+			{
+				alignment += otherBoid.Direction;
+				affect = true;
+			}
+			if (affect)
+				nearbyCount += 1;
+		}
+		affect = false;
+	}
+	
+	//Averaging ( Mul is faster than Div on GPU)!
+	float averageFactor = 1.0 / nearbyCount;
+	alignment *= averageFactor;
+	cohesion *= averageFactor;
 
-    float3 separation = float3(0,0,0);
-    float3 cohesion = FlockingTargetPosition; // Always go to the glowing light!
-    float3 alignment = float3(0,0,0);
-    
-    uint nearbyCount = 1;
-    for(int i = 0; i < BoidsCount; i++)
-    {
-        if(i != (int)id.x)
-        {
-            Boid otherBoid = boidBuffer[i];
-            if(distance(boid.Position, otherBoid.Position) < NeighbourhoodRadius) // In My Local Circle!
-            {
-                //Add Alignment & Cohesion
-                alignment += otherBoid.Direction;
-                cohesion += otherBoid.Position;
-                //Separation
-                float diffVector = boid.Position - otherBoid.Position;
-                //Let's consider adding unit size in consideration, a boid of particles is not a boid of birds / fish!
-                separation += diffVector;
-                //Count Nearby
-                nearbyCount+=1;
-            }
-        }
-    }
-    //Averaging ( Mul is faster than Div on GPU)!
-    float averageFactor = 1.0 / nearbyCount;
-    alignment *= averageFactor; 
-    cohesion *= averageFactor;
-    separation *= averageFactor;
-    
-    // Apply Scaling
-    alignment *= AlignScale;
-    cohesion *= CohesionScale;
-    separation *= SeparationScale;
+	// Apply Scaling
+	alignment *= AlignScale;
+	cohesion *= CohesionScale;
+	separation *= SeparationScale;
 
-    cohesion = normalize(cohesion - boid.Position); // Get Normalized Direction of Cohesion Vector from self boid! 
+	cohesion = normalize(cohesion - boid.Position); // Get Normalized Direction of Cohesion Vector from self boid! 
 
-    float3 finalDirection = alignment + separation + cohesion;
+	float3 finalDirection = alignment + separation + cohesion;
 
-    float lerpFactor = exp(-1 * RotationSpeed * DeltaTime); //<< Yields Better result than directly interpolating by Rot*DTime!
-    boid.Direction = lerp(finalDirection, normalize(boid.Direction), lerpFactor);
-    //(Vec) * (float * float) is faster than (Vec * float * float)
-    boid.Position += (boid.Direction) * (speed * DeltaTime);
+	float lerpFactor = exp(-1 * RotationSpeed * DeltaTime); //<< Yields Better result than directly interpolating by Rot*DTime!
+	boid.Direction = lerp(finalDirection, normalize(boid.Direction), lerpFactor);
+	//(Vec) * (float * float) is faster than (Vec * float * float)
+	boid.Position += (boid.Direction) * (speed * DeltaTime);
 
-    boidBuffer[id.x] = boid;
+	boidBuffer[id.x] = boid;
 }

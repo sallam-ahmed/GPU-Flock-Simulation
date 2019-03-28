@@ -22,6 +22,11 @@ namespace FlockSimulation.GPU
         public float RotationSpeed = 1f;
         public float BoidSpeed = 1f;
         public float NeighbourDistance = 1f;
+        [Header("Radius Control")]
+        public float FleeRadius;
+        public float AlignmentRadius;
+        public float CohesionRadius;
+        public float SeparationRadius;
 
         [Header("Behaviours Control")]
         [Range(1, 5)]
@@ -124,6 +129,11 @@ namespace FlockSimulation.GPU
             FlockingComputeShader.SetInt("AlignScale", AlignScale);
             FlockingComputeShader.SetInt("CohesionScale", CohesionScale);
             FlockingComputeShader.SetInt("SeparationScale", SeparationScale);
+
+            FlockingComputeShader.SetFloat("FleeRadius", FleeRadius);
+            FlockingComputeShader.SetFloat("AlignmentRadius", AlignmentRadius);
+            FlockingComputeShader.SetFloat("CohesionRadius", CohesionRadius);
+            FlockingComputeShader.SetFloat("SeparationRadius", SeparationRadius);
         }
     }
 }
