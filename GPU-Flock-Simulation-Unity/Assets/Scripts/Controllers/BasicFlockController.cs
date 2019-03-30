@@ -27,6 +27,7 @@ namespace FlockSimulation.GPU
         public float AlignmentRadius;
         public float CohesionRadius;
         public float SeparationRadius;
+        public float PredatorHuntRadius;
 
         [Header("Behaviours Control")]
         [Range(1, 5)]
@@ -36,6 +37,7 @@ namespace FlockSimulation.GPU
         [Range(1, 5)]
         public int SeparationScale;
 
+        public int PredatorsCount;
         private BoidGPU[] boidsData;
         private int kernelHandle;
         private ComputeBuffer boidComputeBuffer;
@@ -48,11 +50,16 @@ namespace FlockSimulation.GPU
             ConstructBuffer(BoidMesh);
             this.boidsData = new BoidGPU[this.BoidsCount];
             this.kernelHandle = FlockingComputeShader.FindKernel("CSMain");
-            for (int i = 0; i < this.BoidsCount; i++)
+            for (int i = 0; i < this.BoidsCount-3; i++)
             {
                 this.boidsData[i] = this.CreateBoidData();
             }
-            boidComputeBuffer = new ComputeBuffer(BoidsCount, 32);
+
+            boidsData[BoidsCount - 1] = CreatePredator();
+            boidsData[BoidsCount - 2] = CreatePredator();
+            boidsData[BoidsCount - 3] = CreatePredator();
+
+            boidComputeBuffer = new ComputeBuffer(BoidsCount, 36);
             boidComputeBuffer.SetData(this.boidsData);
 
             FlockingComputeShader.SetInt("BoidsCount", BoidsCount);
@@ -117,9 +124,20 @@ namespace FlockSimulation.GPU
             Quaternion rot = Quaternion.Slerp(transform.rotation, Random.rotation, Random.value);
             boidData.Position = pos;
             boidData.Direction = rot.eulerAngles;
+            boidData.IsPredator = 0;
             return boidData;
         }
 
+        private BoidGPU CreatePredator()
+        {
+            BoidGPU boidData = new BoidGPU();
+            Vector3 pos = transform.position + Random.insideUnitSphere * SpawnRadius;
+            Quaternion rot = Quaternion.Slerp(transform.rotation, Random.rotation, Random.value);
+            boidData.Position = pos;
+            boidData.Direction = rot.eulerAngles;
+            boidData.IsPredator = 1;
+            return boidData;
+        }
         private void UpdateBufferParams()
         {
             FlockingComputeShader.SetFloat("RotationSpeed", RotationSpeed);
@@ -130,6 +148,7 @@ namespace FlockSimulation.GPU
             FlockingComputeShader.SetInt("CohesionScale", CohesionScale);
             FlockingComputeShader.SetInt("SeparationScale", SeparationScale);
 
+            FlockingComputeShader.SetFloat("PredatorHuntRadius", PredatorHuntRadius);
             FlockingComputeShader.SetFloat("FleeRadius", FleeRadius);
             FlockingComputeShader.SetFloat("AlignmentRadius", AlignmentRadius);
             FlockingComputeShader.SetFloat("CohesionRadius", CohesionRadius);

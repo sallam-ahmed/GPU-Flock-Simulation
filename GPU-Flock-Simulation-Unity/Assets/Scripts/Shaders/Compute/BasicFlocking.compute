@@ -8,6 +8,7 @@ struct Boid
 {
 	float3 Position;
 	float3 Direction;
+	int IsPredator;
 	float2 Padding;
 };
 
@@ -29,6 +30,7 @@ float FleeRadius;
 float AlignmentRadius;
 float CohesionRadius;
 float SeparationRadius;
+float PredatorHuntRadius;
 CBUFFER_END
 
 [numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]
@@ -39,45 +41,80 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	float3 separation = float3(0, 0, 0);
 	float3 alignment = float3(0, 0, 0);
 	float3 cohesion = FlockingTargetPosition; // Always go to the glowing light!
-	
+
 	uint nearbyCount = 1;
-	
+	uint cohesionCount = 1;
+	uint alignmentCount = 1;
+	uint separationCount = 1;
+
 	bool affect = false;
-	
+	if (boid.IsPredator == 1)
+	{
+		speed *= 3;
+	}
+
 	for (int i = 0; i < BoidsCount; i++)
 	{
 		if (i != (int)id.x)
 		{
 			Boid otherBoid = boidBuffer[i];
 			float dist = distance(boid.Position, otherBoid.Position);
-			if (dist <= SeparationRadius)
+			if (boid.IsPredator == 1 && otherBoid.IsPredator == 0)
 			{
-				float3 diff = boid.Position - otherBoid.Position;
-				float diffLength = length(diff);
-				float scaler = clamp(1.0 - diffLength / SeparationRadius, 0.0, 1.0);
-				separation += diff * (scaler / diffLength);
-				affect = true;
+				//Chase Someone
+				if (dist <= PredatorHuntRadius)
+				{
+					cohesion += otherBoid.Position;
+					alignment += otherBoid.Direction;
+					cohesionCount = 2;
+					alignmentCount = 2;
+					break;
+				}
+				
 			}
-			if (dist <= CohesionRadius)
+			else
 			{
-				cohesion += otherBoid.Position;
-				affect = true;
+
+				if (dist <= SeparationRadius)
+				{
+					float3 diff = boid.Position - otherBoid.Position;
+					float diffLength = length(diff);
+					float scaler = clamp(1.0 - diffLength / SeparationRadius, 0.0, 1.0);
+					separation += diff * (scaler / diffLength);
+					separationCount += 1;
+				}
+				if (dist <= CohesionRadius)
+				{
+					cohesion += otherBoid.Position;
+					cohesionCount += 1;
+				}
+				if (dist <= AlignmentRadius)
+				{
+					alignment += otherBoid.Direction;
+					alignmentCount += 1;
+				}
+				if (otherBoid.IsPredator == 1)
+				{
+					if (dist <= FleeRadius)
+					{
+						float3 revDirection = boid.Position - otherBoid.Position;
+						alignment = otherBoid.Direction * 5;
+						cohesion = revDirection;
+
+						separation += revDirection * length(revDirection);
+						alignmentCount = cohesionCount = separationCount = 2;
+						speed *= 2;
+						break;
+					}
+				}
 			}
-			if (dist <= AlignmentRadius)
-			{
-				alignment += otherBoid.Direction;
-				affect = true;
-			}
-			if (affect)
-				nearbyCount += 1;
 		}
-		affect = false;
 	}
-	
+
 	//Averaging ( Mul is faster than Div on GPU)!
-	float averageFactor = 1.0 / nearbyCount;
-	alignment *= averageFactor;
-	cohesion *= averageFactor;
+	//float averageFactor = 1.0 / nearbyCount;
+	alignment /= alignmentCount;
+	cohesion /= cohesionCount;
 
 	// Apply Scaling
 	alignment *= AlignScale;

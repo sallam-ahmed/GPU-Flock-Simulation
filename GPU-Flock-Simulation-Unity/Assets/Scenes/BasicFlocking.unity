@@ -264,13 +264,14 @@ MonoBehaviour:
   RotationSpeed: 0.7
   BoidSpeed: 14
   NeighbourDistance: 5
-  FleeRadius: 0
-  AlignmentRadius: 6
+  FleeRadius: 3
+  AlignmentRadius: 10
   CohesionRadius: 6
   SeparationRadius: 4
   AlignScale: 1
   CohesionScale: 1
   SeparationScale: 1
+  PredatorsCount: 5
 --- !u!4 &761666406
 Transform:
   m_ObjectHideFlags: 0

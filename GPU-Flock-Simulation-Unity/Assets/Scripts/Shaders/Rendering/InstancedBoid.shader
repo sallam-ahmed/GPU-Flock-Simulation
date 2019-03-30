@@ -33,6 +33,7 @@ Shader "Custom/InstancedBoid"
 			{
 				float3 Position;
 				float3 Direction;
+				int IsPredator;
 				float2 Padding;
 			};
 
@@ -73,6 +74,12 @@ Shader "Custom/InstancedBoid"
 		 void surf(Input IN, inout SurfaceOutputStandard o) {
 
 			fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+			if (boidBuffer[unity_InstanceID].IsPredator == 1)
+			{
+				c = (tex2D(_MainTex, IN.uv_MainTex) * float4(1.0, 0, 0, 1)) + float4(1.0, 0, 0, 1);
+			}
+#endif
 			o.Albedo = c.rgb;
 			o.Alpha = c.a;
 		 }
