@@ -144,6 +144,7 @@ namespace FlockSimulation.GPU
             boidData.IsPredator = 1;
             return boidData;
         }
+
         private void UpdateBufferParams()
         {
             FlockingComputeShader.SetFloat("RotationSpeed", RotationSpeed);

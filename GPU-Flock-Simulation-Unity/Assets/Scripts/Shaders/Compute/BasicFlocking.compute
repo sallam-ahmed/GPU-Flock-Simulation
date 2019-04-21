@@ -1,6 +1,6 @@
 #pragma kernel CSMain
 #include "UnityCG.cginc"
-
+#include "../Libs/SimplexNoise.cginc"
 #define GROUP_SIZE_X 256
 
 struct Boid
@@ -33,13 +33,18 @@ float SeparationRadius;
 float PredatorHuntRadius;
 CBUFFER_END
 
+float rand(float3 myVector) {
+	return frac(sin(dot(myVector, float3(12.9898, 78.233, 45.5432))) * 43758.5453);
+}
+
 [numthreads(GROUP_SIZE_X, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
 	int instanceId = (int)id.x;
 
 	Boid boid = boidBuffer[id.x];
-	float speed = BoidSpeed;
+	float noise = simplex_noise(_Time/ 100);
+	float speed = BoidSpeed * (1.0 + noise);
 	float3 separation = float3(0, 0, 0);
 	float3 alignment = float3(0, 0, 0);
 	float3 cohesion = FlockingTargetPosition; // Always go to the glowing light!
@@ -49,7 +54,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	uint alignmentCount = 1;
 	uint separationCount = 1;
 
-	bool affect = false;
+	
 	if (boid.IsPredator == 1)
 	{
 		speed *= 2;

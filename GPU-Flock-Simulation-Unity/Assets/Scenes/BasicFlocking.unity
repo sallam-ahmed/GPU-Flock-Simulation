@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1175780720}
-  m_IndirectSpecularColor: {r: 0.58774287, g: 0.68632114, b: 0.73796767, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -254,7 +254,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FlockingComputeShader: {fileID: 7200000, guid: 14eddde0171f2e04485226a055f2a4c3,
     type: 3}
-  BoidsCount: 5120
+  BoidsCount: 5000
   SpawnRadius: 50
   BoidMesh: {fileID: 4300000, guid: 233cd898f6af12349bcffb0e4f290b1f, type: 3}
   MaterialsList:
@@ -264,7 +264,7 @@ MonoBehaviour:
     m_Extent: {x: 500, y: 500, z: 500}
   Target: {fileID: 1820300347}
   RotationSpeed: 0.8
-  BoidSpeed: 25.01
+  BoidSpeed: 10
   NeighbourDistance: 5
   FleeRadius: 5
   AlignmentRadius: 10
@@ -273,7 +273,7 @@ MonoBehaviour:
   PredatorHuntRadius: 15
   AlignScale: 1
   CohesionScale: 1
-  SeparationScale: 5
+  SeparationScale: 1
   PredatorsCount: 5
 --- !u!4 &761666406
 Transform:
