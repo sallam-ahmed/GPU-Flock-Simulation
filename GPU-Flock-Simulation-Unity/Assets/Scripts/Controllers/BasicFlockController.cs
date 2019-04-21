@@ -1,13 +1,15 @@
 using UnityEngine;
 using Random = UnityEngine.Random;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine.Rendering;
 
 namespace FlockSimulation.GPU
 {
     public class BasicFlockController : MonoBehaviour
     {
-        private const int BoidsGroupSizeX = 512;
-        private const int BoidsGroupSizeY = 2;
+        private const int BoidsGroupSizeX = 256;
+
         private string BufferName = "boidBuffer";
         public ComputeShader FlockingComputeShader;
         public int BoidsCount;
@@ -16,6 +18,7 @@ namespace FlockSimulation.GPU
         [Header("Boid Rendering")]
         public Mesh BoidMesh;
         public List<Material> MaterialsList;
+        public Bounds RenderBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
 
         [Header("Boid Behaviour")]
         public Transform Target;
@@ -43,8 +46,7 @@ namespace FlockSimulation.GPU
         private ComputeBuffer boidComputeBuffer;
         private ComputeBuffer drawArgsBuffer;
         private int drawCallsCount;
-        private readonly Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 1000);
-
+        
         private void Start()
         {
             ConstructBuffer(BoidMesh);
@@ -59,7 +61,7 @@ namespace FlockSimulation.GPU
             boidsData[BoidsCount - 2] = CreatePredator();
             boidsData[BoidsCount - 3] = CreatePredator();
 
-            boidComputeBuffer = new ComputeBuffer(BoidsCount, 36);
+            boidComputeBuffer = new ComputeBuffer(BoidsCount, 40);
             boidComputeBuffer.SetData(this.boidsData);
 
             FlockingComputeShader.SetInt("BoidsCount", BoidsCount);
@@ -72,11 +74,11 @@ namespace FlockSimulation.GPU
             FlockingComputeShader.SetFloat("DeltaTime", Time.deltaTime);
             //Realtime Control!           
             UpdateBufferParams();
-            FlockingComputeShader.Dispatch(kernelHandle, BoidsCount / BoidsGroupSizeX + 1, BoidsGroupSizeY, 1);
+            FlockingComputeShader.Dispatch(kernelHandle, BoidsCount / BoidsGroupSizeX + 1, 1, 1);
             for (int i = 0; i < drawCallsCount; i++)
             {
                 MaterialsList[i].SetBuffer(BufferName, boidComputeBuffer);
-                Graphics.DrawMeshInstancedIndirect(BoidMesh, i, MaterialsList[i], bounds, drawArgsBuffer, i * 5 * sizeof(uint));
+                Graphics.DrawMeshInstancedIndirect(BoidMesh, i, MaterialsList[i], RenderBounds, drawArgsBuffer,  i * 5 * sizeof(uint));
             }
         }
 
@@ -115,6 +117,10 @@ namespace FlockSimulation.GPU
             Gizmos.color = selected ? new Color(0, 1, 0, 1) : new Color(0, 1, 0, 0.5f);
             Gizmos.DrawWireSphere(transform.position, SpawnRadius);
             Gizmos.DrawIcon(transform.position + Vector3.up, "BoidController");
+            if (selected)
+            {
+                Gizmos.DrawWireCube(RenderBounds.center, RenderBounds.size);
+            }
         }
 
         private BoidGPU CreateBoidData()

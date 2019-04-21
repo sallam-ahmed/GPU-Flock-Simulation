@@ -1,14 +1,14 @@
 #pragma kernel CSMain
 #include "UnityCG.cginc"
 
-#define GROUP_SIZE_X 512
-#define GROUP_SIZE_Y 2
+#define GROUP_SIZE_X 256
 
 struct Boid
 {
 	float3 Position;
 	float3 Direction;
 	int IsPredator;
+	int State;
 	float2 Padding;
 };
 
@@ -33,9 +33,11 @@ float SeparationRadius;
 float PredatorHuntRadius;
 CBUFFER_END
 
-[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]
+[numthreads(GROUP_SIZE_X, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
+	int instanceId = (int)id.x;
+
 	Boid boid = boidBuffer[id.x];
 	float speed = BoidSpeed;
 	float3 separation = float3(0, 0, 0);
@@ -50,62 +52,65 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	bool affect = false;
 	if (boid.IsPredator == 1)
 	{
-		speed *= 3;
+		speed *= 2;
 	}
-
+	boid.State = 0;
 	for (int i = 0; i < BoidsCount; i++)
 	{
-		if (i != (int)id.x)
+		if (i == instanceId)
+			continue;
+
+		Boid otherBoid = boidBuffer[i];
+		float dist = distance(boid.Position, otherBoid.Position);
+		if (boid.IsPredator == 1)
 		{
-			Boid otherBoid = boidBuffer[i];
-			float dist = distance(boid.Position, otherBoid.Position);
-			if (boid.IsPredator == 1 && otherBoid.IsPredator == 0)
+			if (otherBoid.IsPredator == 0)
 			{
 				//Chase Someone
 				if (dist <= PredatorHuntRadius)
 				{
 					cohesion += otherBoid.Position;
 					alignment += otherBoid.Direction;
-					cohesionCount = 2;
-					alignmentCount = 2;
-					break;
-				}
-				
-			}
-			else
-			{
-
-				if (dist <= SeparationRadius)
-				{
-					float3 diff = boid.Position - otherBoid.Position;
-					float diffLength = length(diff);
-					float scaler = clamp(1.0 - diffLength / SeparationRadius, 0.0, 1.0);
-					separation += diff * (scaler / diffLength);
-					separationCount += 1;
-				}
-				if (dist <= CohesionRadius)
-				{
-					cohesion += otherBoid.Position;
 					cohesionCount += 1;
-				}
-				if (dist <= AlignmentRadius)
-				{
-					alignment += otherBoid.Direction;
 					alignmentCount += 1;
+					boid.State = 3;
 				}
-				if (otherBoid.IsPredator == 1)
-				{
-					if (dist <= FleeRadius)
-					{
-						float3 revDirection = boid.Position - otherBoid.Position;
-						alignment = otherBoid.Direction * 5;
-						cohesion = revDirection;
+			}
+		}
+		else
+		{
 
-						separation += revDirection * length(revDirection);
-						alignmentCount = cohesionCount = separationCount = 2;
-						speed *= 2;
-						break;
-					}
+			if (dist <= SeparationRadius)
+			{
+				float3 diff = boid.Position - otherBoid.Position;
+				float diffLength = length(diff);
+				float scaler = clamp(1.0 - diffLength / SeparationRadius, 0.0, 1.0);
+				separation += diff * (scaler / diffLength);
+				separationCount += 1;
+			}
+			if (dist <= CohesionRadius)
+			{
+				cohesion += otherBoid.Position;
+				cohesionCount += 1;
+			}
+			if (dist <= AlignmentRadius)
+			{
+				alignment += otherBoid.Direction;
+				alignmentCount += 1;
+			}
+			if (otherBoid.IsPredator == 1)
+			{
+				if (dist <= FleeRadius)
+				{
+					boid.State = 2;
+					float3 revDirection = boid.Position - otherBoid.Position;
+					alignment = otherBoid.Direction + float3(10, 10, 10);
+					cohesion = revDirection;
+					separation += revDirection * length(revDirection);
+					alignmentCount = cohesionCount = separationCount = 2;
+
+					speed *= 3;
+					break;
 				}
 			}
 		}
@@ -124,8 +129,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	cohesion = normalize(cohesion - boid.Position); // Get Normalized Direction of Cohesion Vector from self boid! 
 
 	float3 finalDirection = alignment + separation + cohesion;
-
-	float lerpFactor = exp(-1 * RotationSpeed * DeltaTime); //<< Yields Better result than directly interpolating by Rot*DTime!
+	float rotSpeed = RotationSpeed;
+	if (boid.State == 3)
+	{
+		rotSpeed *= 1.5;
+	}
+	float lerpFactor = exp(-1 * rotSpeed * DeltaTime); //<< Yields Better result than directly interpolating by Rot*DTime!
 	boid.Direction = lerp(finalDirection, normalize(boid.Direction), lerpFactor);
 	//(Vec) * (float * float) is faster than (Vec * float * float)
 	boid.Position += (boid.Direction) * (speed * DeltaTime);
