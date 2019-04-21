@@ -51,8 +51,8 @@ LightmapSettings:
     m_IndirectOutputScale: 1
     m_AlbedoBoost: 1
     m_EnvironmentLightingMode: 0
-    m_EnableBakedLightmaps: 1
-    m_EnableRealtimeLightmaps: 1
+    m_EnableBakedLightmaps: 0
+    m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
     serializedVersion: 10
     m_Resolution: 2
@@ -88,8 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ShowResolutionOverlay: 1
-  m_LightingDataAsset: {fileID: 112000000, guid: 4e4a466b3b781324bab3d04351f0f56c,
-    type: 2}
+  m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
 NavMeshSettings:
@@ -255,22 +254,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FlockingComputeShader: {fileID: 7200000, guid: 14eddde0171f2e04485226a055f2a4c3,
     type: 3}
-  BoidsCount: 1000
+  BoidsCount: 5120
   SpawnRadius: 50
-  BoidMesh: {fileID: 4300000, guid: 3491758e99cf6e74e82b4869ecf645fb, type: 3}
+  BoidMesh: {fileID: 4300000, guid: 233cd898f6af12349bcffb0e4f290b1f, type: 3}
   MaterialsList:
-  - {fileID: 2100000, guid: 25e1f2eddde2dad42a39bae1ffe630c2, type: 2}
+  - {fileID: 2100000, guid: 9f07dff33e7326743ae74be9e6685d58, type: 2}
+  RenderBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 500, y: 500, z: 500}
   Target: {fileID: 1820300347}
-  RotationSpeed: 0.7
-  BoidSpeed: 14
+  RotationSpeed: 0.8
+  BoidSpeed: 25.01
   NeighbourDistance: 5
-  FleeRadius: 3
+  FleeRadius: 5
   AlignmentRadius: 10
   CohesionRadius: 6
   SeparationRadius: 4
+  PredatorHuntRadius: 15
   AlignScale: 1
   CohesionScale: 1
-  SeparationScale: 1
+  SeparationScale: 5
   PredatorsCount: 5
 --- !u!4 &761666406
 Transform:
@@ -361,8 +364,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 973219657}
-  m_LocalRotation: {x: -0, y: 0.38268274, z: -0, w: 0.9238798}
-  m_LocalPosition: {x: 0.19131851, y: 14.9, z: 0.3}
+  m_LocalRotation: {x: -0.014842013, y: -0.85979974, z: 0.025028704, w: -0.5098015}
+  m_LocalPosition: {x: -230.33621, y: 51.965225, z: 161.85345}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
