@@ -1,18 +1,19 @@
+using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine.Rendering;
 
 namespace FlockSimulation.GPU
 {
     public class BasicFlockController : MonoBehaviour
     {
         private const int BoidsGroupSizeX = 256;
-
         private string BufferName = "boidBuffer";
+
+        [Header("Setup")]
         public ComputeShader FlockingComputeShader;
         public int BoidsCount;
+        public int PredatorsCount;
         public float SpawnRadius;
 
         [Header("Boid Rendering")]
@@ -40,7 +41,6 @@ namespace FlockSimulation.GPU
         [Range(1, 5)]
         public int SeparationScale;
 
-        public int PredatorsCount;
         private BoidGPU[] boidsData;
         private int kernelHandle;
         private ComputeBuffer boidComputeBuffer;
@@ -52,14 +52,19 @@ namespace FlockSimulation.GPU
             ConstructBuffer(BoidMesh);
             this.boidsData = new BoidGPU[this.BoidsCount];
             this.kernelHandle = FlockingComputeShader.FindKernel("CSMain");
-            for (int i = 0; i < this.BoidsCount-3; i++)
+            if (PredatorsCount > BoidsCount)
+            {
+                throw new Exception("Unable to Start Simulation, Predators count higher than Boids Total Count");
+            }
+            for (int i = BoidsCount-1; i >= BoidsCount - PredatorsCount; i--)
+            {
+                boidsData[i] = CreatePredator();
+            }
+
+            for (int i = 0; i < this.BoidsCount-PredatorsCount; i++)
             {
                 this.boidsData[i] = this.CreateBoidData();
             }
-
-            boidsData[BoidsCount - 1] = CreatePredator();
-            boidsData[BoidsCount - 2] = CreatePredator();
-            boidsData[BoidsCount - 3] = CreatePredator();
 
             boidComputeBuffer = new ComputeBuffer(BoidsCount, 40);
             boidComputeBuffer.SetData(this.boidsData);

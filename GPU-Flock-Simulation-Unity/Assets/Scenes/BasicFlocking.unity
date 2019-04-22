@@ -254,8 +254,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FlockingComputeShader: {fileID: 7200000, guid: 14eddde0171f2e04485226a055f2a4c3,
     type: 3}
-  BoidsCount: 5000
-  SpawnRadius: 50
+  BoidsCount: 10000
+  PredatorsCount: 2000
+  SpawnRadius: 20
   BoidMesh: {fileID: 4300000, guid: 233cd898f6af12349bcffb0e4f290b1f, type: 3}
   MaterialsList:
   - {fileID: 2100000, guid: 9f07dff33e7326743ae74be9e6685d58, type: 2}
@@ -274,7 +275,6 @@ MonoBehaviour:
   AlignScale: 1
   CohesionScale: 1
   SeparationScale: 1
-  PredatorsCount: 5
 --- !u!4 &761666406
 Transform:
   m_ObjectHideFlags: 0
