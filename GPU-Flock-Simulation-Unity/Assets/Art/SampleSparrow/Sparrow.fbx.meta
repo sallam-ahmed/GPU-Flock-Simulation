@@ -1,46 +1,34 @@
 fileFormatVersion: 2
-guid: 3491758e99cf6e74e82b4869ecf645fb
+guid: 78a0785cd945c8747a8a5cd4456bd79b
 ModelImporter:
   serializedVersion: 23
   fileIDToRecycleName:
-    100000: Armature
-    100002: Bone
-    100004: Bone_001
-    100006: Bone_002
-    100008: Bone_003
-    100010: Bone_004
-    100012: Bone_005
-    100014: Bone_006
-    100016: Bone_007
-    100018: Bone_008
-    100020: Bone_009
-    100022: Bone_010
-    100024: Bone_011
-    100026: //RootNode
-    100028: Flugel
-    400000: Armature
-    400002: Bone
-    400004: Bone_001
-    400006: Bone_002
-    400008: Bone_003
-    400010: Bone_004
-    400012: Bone_005
-    400014: Bone_006
-    400016: Bone_007
-    400018: Bone_008
-    400020: Bone_009
-    400022: Bone_010
-    400024: Bone_011
-    400026: //RootNode
-    400028: Flugel
-    2100000: Fogel_Mat__Fogel_Mat_Diffuse_Color
-    4300000: Flugel
-    7400000: Default Take
-    7400002: Attac
-    7400004: Fly
-    7400006: FlyStay
+    100000: Bone
+    100002: Bone1
+    100004: Bone2
+    100006: Bone3
+    100008: Bone4
+    100010: Bone5
+    100012: //RootNode
+    100014: Mesh1
+    100016: Scene_Root
+    100018: Scene_Root1
+    400000: Bone
+    400002: Bone1
+    400004: Bone2
+    400006: Bone3
+    400008: Bone4
+    400010: Bone5
+    400012: //RootNode
+    400014: Mesh1
+    400016: Scene_Root
+    400018: Scene_Root1
+    2100000: Texture
+    4300000: Mesh1
+    7400000: Animation
     9500000: //RootNode
-    13700000: Flugel
+    13700000: Mesh1
+    2186277476908879412: ImportLogs
   externalObjects: {}
   materials:
     importMaterials: 1
@@ -93,7 +81,7 @@ ModelImporter:
     secondaryUVHardAngle: 88
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
+    previousCalculatedGlobalScale: 0.01
     hasPreviousCalculatedGlobalScale: 1
   tangentSpace:
     normalSmoothAngle: 60
