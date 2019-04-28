@@ -8,7 +8,8 @@ namespace FlockSimulation.GPU
     public class BasicFlockController : MonoBehaviour
     {
         private const int BoidsGroupSizeX = 256;
-        private string BufferName = "boidBuffer";
+        private const string BufferName = "boidBuffer";
+        private const string AnimationBufferName = "vertexAnimationBuffer";
 
         [Header("Setup")]
         public ComputeShader FlockingComputeShader;
@@ -20,12 +21,20 @@ namespace FlockSimulation.GPU
         public Mesh BoidMesh;
         public List<Material> MaterialsList;
         public Bounds RenderBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
+        [Header("Animation")] public GameObject SampleBoid;
+        public AnimationClip BoidAnimationClip;
+        public float AnimationFrameSpeed;
+        public bool FrameInterpolation;
+
 
         [Header("Boid Behaviour")]
         public Transform Target;
         public float RotationSpeed = 1f;
         public float BoidSpeed = 1f;
+        [Range(1f, 3f)]
+        public float PredatorSpeedMultiplier = 2f;
         public float NeighbourDistance = 1f;
+
         [Header("Radius Control")]
         public float FleeRadius;
         public float AlignmentRadius;
@@ -41,36 +50,23 @@ namespace FlockSimulation.GPU
         [Range(1, 5)]
         public int SeparationScale;
 
+        
         private BoidGPU[] boidsData;
         private int kernelHandle;
         private ComputeBuffer boidComputeBuffer;
         private ComputeBuffer drawArgsBuffer;
+        private ComputeBuffer animationBuffer;
         private int drawCallsCount;
-        
+
+        private SkinnedMeshRenderer boidSkinnedMeshRenderer;
+        private Animator boidAnimator;
+        private int framesCount;
+        private bool isFrameInterpolationEnabled;
+
         private void Start()
         {
-            ConstructBuffer(BoidMesh);
-            this.boidsData = new BoidGPU[this.BoidsCount];
-            this.kernelHandle = FlockingComputeShader.FindKernel("CSMain");
-            if (PredatorsCount > BoidsCount)
-            {
-                throw new Exception("Unable to Start Simulation, Predators count higher than Boids Total Count");
-            }
-            for (int i = BoidsCount-1; i >= BoidsCount - PredatorsCount; i--)
-            {
-                boidsData[i] = CreatePredator();
-            }
-
-            for (int i = 0; i < this.BoidsCount-PredatorsCount; i++)
-            {
-                this.boidsData[i] = this.CreateBoidData();
-            }
-
-            boidComputeBuffer = new ComputeBuffer(BoidsCount, 40);
-            boidComputeBuffer.SetData(this.boidsData);
-
-            FlockingComputeShader.SetInt("BoidsCount", BoidsCount);
-            FlockingComputeShader.SetBuffer(kernelHandle, BufferName, boidComputeBuffer);
+            Setup();
+            UpdateBufferParams();
         }
 
         private void Update()
@@ -83,7 +79,8 @@ namespace FlockSimulation.GPU
             for (int i = 0; i < drawCallsCount; i++)
             {
                 MaterialsList[i].SetBuffer(BufferName, boidComputeBuffer);
-                Graphics.DrawMeshInstancedIndirect(BoidMesh, i, MaterialsList[i], RenderBounds, drawArgsBuffer,  i * 5 * sizeof(uint));
+                MaterialsList[i].SetInt("FramesCount", framesCount);
+                Graphics.DrawMeshInstancedIndirect(BoidMesh, i, MaterialsList[i], RenderBounds, drawArgsBuffer, i * 5 * sizeof(uint));
             }
         }
 
@@ -91,31 +88,12 @@ namespace FlockSimulation.GPU
         {
             if (boidComputeBuffer != null) boidComputeBuffer.Release();
             if (drawArgsBuffer != null) drawArgsBuffer.Release();
+            if (animationBuffer != null) animationBuffer.Release();
         }
 
         private void OnDrawGizmosSelected() => DrawGizmos(true);
 
         private void OnDrawGizmos() => DrawGizmos(false);
-
-        private void ConstructBuffer(Mesh meshTemplate)
-        {
-            List<uint> renderArgsList = new List<uint>(5);
-            drawCallsCount = 0;
-            for (int i = 0; i < meshTemplate.subMeshCount; i++)
-            {
-                uint meshIndexStart = meshTemplate.GetIndexStart(i);
-                uint meshBaseVertex = meshTemplate.GetBaseVertex(i);
-                uint meshIndexCount = meshTemplate.GetIndexCount(i);
-                renderArgsList.Add(meshIndexCount);
-                renderArgsList.Add((uint)BoidsCount);
-                renderArgsList.Add(meshIndexStart);
-                renderArgsList.Add(meshBaseVertex);
-                renderArgsList.Add(0);
-                drawCallsCount += 1;
-            }
-            drawArgsBuffer = new ComputeBuffer(1, drawCallsCount * 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
-            drawArgsBuffer.SetData(renderArgsList.ToArray());
-        }
 
         private void DrawGizmos(bool selected)
         {
@@ -124,8 +102,66 @@ namespace FlockSimulation.GPU
             Gizmos.DrawIcon(transform.position + Vector3.up, "BoidController");
             if (selected)
             {
+                Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale);
                 Gizmos.DrawWireCube(RenderBounds.center, RenderBounds.size);
             }
+        }
+
+        private void Setup()
+        {
+            
+            drawArgsBuffer = BoidMesh.CreateDrawComputeBuffer(BoidsCount, out drawCallsCount);
+
+            this.boidsData = new BoidGPU[this.BoidsCount];
+            this.kernelHandle = FlockingComputeShader.FindKernel("CSMain");
+            if (PredatorsCount > BoidsCount)
+            {
+                throw new Exception("Unable to Start Simulation, Predators count higher than Boids Total Count");
+            }
+
+            for (int i = BoidsCount - 1; i >= BoidsCount - PredatorsCount; i--)
+            {
+                boidsData[i] = CreatePredator();
+            }
+
+            for (int i = 0; i < this.BoidsCount - PredatorsCount; i++)
+            {
+                this.boidsData[i] = this.CreateBoidData();
+            }
+
+            boidComputeBuffer = new ComputeBuffer(BoidsCount, 48);
+            boidComputeBuffer.SetData(this.boidsData);
+
+            FlockingComputeShader.SetInt("BoidsCount", BoidsCount);
+            FlockingComputeShader.SetBuffer(kernelHandle, BufferName, boidComputeBuffer);
+
+            SetupAnimationProperties();
+        }
+
+        private void SetupAnimationProperties()
+        {
+            SampleBoid.SetActive(true);
+            boidSkinnedMeshRenderer = SampleBoid.GetComponentInChildren<SkinnedMeshRenderer>();
+            boidAnimator = SampleBoid.GetComponentInChildren<Animator>();
+            boidAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            animationBuffer = boidSkinnedMeshRenderer.CreateSkinnedAnimationComputeBuffer(boidAnimator, BoidAnimationClip, out framesCount);
+
+            MaterialsList.ForEach(material =>
+            {
+                material.SetBuffer(AnimationBufferName, animationBuffer);
+                material.SetInt("FramesCount", framesCount);
+                if (FrameInterpolation)
+                {
+                    material.EnableKeyword("FRAME_INTERPOLATION");
+                }
+                else
+                {
+                    material.DisableKeyword("FRAME_INTERPOLATION");
+                }
+            });
+            isFrameInterpolationEnabled = FrameInterpolation;
+            SampleBoid.SetActive(false);
         }
 
         private BoidGPU CreateBoidData()
@@ -154,6 +190,7 @@ namespace FlockSimulation.GPU
         {
             FlockingComputeShader.SetFloat("RotationSpeed", RotationSpeed);
             FlockingComputeShader.SetFloat("BoidSpeed", BoidSpeed);
+            FlockingComputeShader.SetFloat("PredatorSpeedMultiplier", PredatorSpeedMultiplier);
             FlockingComputeShader.SetVector("FlockingTargetPosition", Target.transform.position);
             FlockingComputeShader.SetFloat("NeighbourhoodRadius", NeighbourDistance);
             FlockingComputeShader.SetInt("AlignScale", AlignScale);
@@ -165,6 +202,21 @@ namespace FlockSimulation.GPU
             FlockingComputeShader.SetFloat("AlignmentRadius", AlignmentRadius);
             FlockingComputeShader.SetFloat("CohesionRadius", CohesionRadius);
             FlockingComputeShader.SetFloat("SeparationRadius", SeparationRadius);
+
+            FlockingComputeShader.SetFloat("AnimationFrameSpeed", AnimationFrameSpeed);
+            FlockingComputeShader.SetInt("FramesCount", framesCount);
+
+            if (FrameInterpolation && !isFrameInterpolationEnabled)
+            {
+                MaterialsList.ForEach(material => material.EnableKeyword("FRAME_INTERPOLATION"));
+                isFrameInterpolationEnabled = true;
+            }
+
+            if (!FrameInterpolation && isFrameInterpolationEnabled)
+            {
+                MaterialsList.ForEach(material => material.DisableKeyword("FRAME_INTERPOLATION"));
+                isFrameInterpolationEnabled = false;
+            }
         }
     }
 }

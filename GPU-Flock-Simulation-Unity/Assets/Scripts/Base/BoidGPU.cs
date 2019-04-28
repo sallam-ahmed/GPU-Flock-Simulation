@@ -8,7 +8,10 @@ namespace FlockSimulation.GPU
         public Vector3 Direction;
         public int IsPredator;
         public int State;
-        public Vector2 Padding; // Pad to 32!
+        public float Frame;
+        public float NextFrame;
+        public float FrameInterpolation;
+        public float Padding;
     }
 
     /*

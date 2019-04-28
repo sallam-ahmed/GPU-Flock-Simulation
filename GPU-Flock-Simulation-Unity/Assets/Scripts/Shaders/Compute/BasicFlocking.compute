@@ -3,13 +3,22 @@
 #include "../Libs/SimplexNoise.cginc"
 #define GROUP_SIZE_X 256
 
+/*
+	 *Boid State Table
+	 *  1 Normal
+	 *  2 Being Chased by Predator
+	 *  3 Chasing
+*/
 struct Boid
 {
 	float3 Position;
 	float3 Direction;
 	int IsPredator;
 	int State;
-	float2 Padding;
+	float Frame;
+	float NextFrame;
+	float FrameInterpolation;
+	float Padding;
 };
 
 RWStructuredBuffer<Boid> boidBuffer;
@@ -18,6 +27,7 @@ CBUFFER_START(Params)
 float DeltaTime;
 float RotationSpeed;
 float BoidSpeed;
+float PredatorSpeedMultiplier;
 float3 FlockingTargetPosition;
 float NeighbourhoodRadius;
 int BoidsCount;
@@ -31,6 +41,9 @@ float AlignmentRadius;
 float CohesionRadius;
 float SeparationRadius;
 float PredatorHuntRadius;
+//Skinning
+float AnimationFrameSpeed;
+int FramesCount;
 CBUFFER_END
 
 float rand(float3 myVector) {
@@ -43,7 +56,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	int instanceId = (int)id.x;
 
 	Boid boid = boidBuffer[id.x];
-	float noise = simplex_noise(_Time/ 100);
+	float noise = simplex_noise(_Time / 100);
 	float speed = BoidSpeed * (1.0 + noise);
 	float3 separation = float3(0, 0, 0);
 	float3 alignment = float3(0, 0, 0);
@@ -54,12 +67,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	uint alignmentCount = 1;
 	uint separationCount = 1;
 
-	
 	if (boid.IsPredator == 1)
 	{
-		speed *= 2;
+		speed *= PredatorSpeedMultiplier;
 	}
 	boid.State = 0;
+
 	for (int i = 0; i < BoidsCount; i++)
 	{
 		if (i == instanceId)
@@ -143,6 +156,21 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	boid.Direction = lerp(finalDirection, normalize(boid.Direction), lerpFactor);
 	//(Vec) * (float * float) is faster than (Vec * float * float)
 	boid.Position += (boid.Direction) * (speed * DeltaTime);
+	
+	//Animation
+	float current_frame = (boid.Frame + speed * (DeltaTime * AnimationFrameSpeed));
+	int current_frame_floor = trunc(current_frame);
+	boid.Frame = current_frame;
+	boid.NextFrame = current_frame_floor + 1;
+	boid.FrameInterpolation = current_frame - current_frame_floor;
+
+	if (current_frame_floor >= FramesCount) {
+		boid.Frame = 0;
+		boid.NextFrame = 1;
+	}
+	else if (current_frame_floor >= FramesCount - 1) {
+		boid.NextFrame = 0;
+	}
 
 	boidBuffer[id.x] = boid;
 }
