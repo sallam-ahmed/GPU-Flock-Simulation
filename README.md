@@ -20,8 +20,8 @@ Tweak the parameters of ***BasicFlockController*** to control the general behavi
 - [x] Add Predation Behaviour (_Some boids will act as a predator, seek to hunt other boids_)
 - [x] Add Flee Behaviour (_Boids will run away from predators_)
 - [x] Add different ranges for each behaviour.
-- [ ] Add Collision Avoidance (_Boids will avoid collisions around the scene, __will probably be baked static colliders___)
-- [ ] Add Boid Specific Skinned Animation.
+- [x] Add Boid Specific Skinned Animation.
+- [x] ~Add Collision Avoidance (_Boids will avoid collisions around the scene, __will probably be baked static colliders___)~ Collision Avoidance won't be feasible for the general purpose of the whole system!
 
 **Inspired by:**
 
